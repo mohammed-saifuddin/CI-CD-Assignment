@@ -5,7 +5,7 @@ data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = "github-oauth-token"
 }
 locals {
-  github_oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
+  github_oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_id
 }
 
 terraform {

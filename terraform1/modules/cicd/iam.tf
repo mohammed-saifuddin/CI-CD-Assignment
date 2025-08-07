@@ -47,6 +47,8 @@ resource "aws_iam_role_policy" "codebuild_s3_access" {
   })
 }
 
+
+
 resource "aws_iam_role_policy" "codebuild_logs_policy" {
   name = "CodeBuildCloudWatchLogsPolicy"
   role = aws_iam_role.codebuild_role1.name
@@ -106,6 +108,11 @@ resource "aws_iam_role_policy_attachment" "code_deploy_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "codebuild_logs_policy1" {
+  role = aws_iam_role.codebuild_role1.name
+    policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
 resource "aws_iam_role" "codepipeline_role" {
   name = "CodePipelineServiceRoles"
 
@@ -118,6 +125,69 @@ resource "aws_iam_role" "codepipeline_role" {
       },
       Action = "sts:AssumeRole"
     }]
+  })
+}
+resource "aws_iam_role_policy" "codebuild_permissions" {
+  name = "codebuild-permissions"
+  role = aws_iam_role.codebuild_role1.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          # Secrets Manager
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+
+          # S3
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+          "s3:GetBucketAcl",
+          "s3:GetBucketLocation",
+          "s3:ListBucket",
+
+          # CodeDeploy
+          "codedeploy:GetApplication",
+          "codedeploy:ListApplications",
+          "codedeploy:GetDeploymentGroup",
+          "codedeploy:ListDeploymentGroups",
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetDeployment",
+
+          # CodePipeline
+          "codepipeline:GetPipeline",
+          "codepipeline:GetPipelineExecution",
+
+          # EC2/VPC
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribeLaunchTemplates",
+          "ec2:DescribeLaunchTemplateVersions",
+          "ec2:DescribeAvailabilityZones",
+
+          # IAM
+          "iam:GetRole",
+          "iam:ListAttachedRolePolicies",
+          "iam:PassRole",
+
+          # ECR
+          "ecr:DescribeRepositories",
+          "ecr:GetAuthorizationToken",
+
+          # Logs (optional but useful)
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "*"
+      }
+    ]
   })
 }
 
@@ -165,6 +235,36 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
     ]
   })
 }
+# resource "aws_iam_role" "codebuild_role1" {
+#   name = "codebuild-role1"
+
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [
+#       {
+#         Effect = "Allow",
+#         Principal = {
+#           Service = "codebuild.amazonaws.com"
+          
+#         },
+#          Action = [
+#           "iam:GetRolePolicy",
+#           "iam:GetRole",
+#           "iam:ListRolePolicies",
+#           "iam:PassRole",
+          
+#           "codedeploy:ListTagsForResource",
+#           "s3:GetBucketPolicy",
+#           "ec2:DescribeLaunchTemplateVersions",
+#           "ec2:DescribeVpcAttribute",
+#           "ec2:DescribeAddressesAttribute"
+#         ],
+        
+#       }
+#     ]
+#   })
+# }
+
 resource "aws_iam_role" "codebuild_role1" {
   name = "codebuild-role1"
 
@@ -175,15 +275,9 @@ resource "aws_iam_role" "codebuild_role1" {
         Effect = "Allow",
         Principal = {
           Service = "codebuild.amazonaws.com"
-          
         },
-        Action = ["sts:AssumeRole","ssm:GetParameter","secretsmanager:GetSecretValue"]
+        Action = "sts:AssumeRole"
       }
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "codebuild_logs_policy1" {
-  role = aws_iam_role.codebuild_role1.name
-    policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

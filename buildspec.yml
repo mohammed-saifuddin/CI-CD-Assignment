@@ -1,0 +1,88 @@
+version: 0.2
+
+env:
+<<<<<<< HEAD
+   variables:
+    IMAGE_TAG: "latest"
+    AWS_REGION : ap-south-1
+    AWS_ACCOUNT_ID : 129783607175
+    
+
+phases:
+  install:
+    
+      commands:
+
+      - apt-get update -y
+      - apt-get install -y unzip
+      - rm -rf terraform
+      - curl -fsSL https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip -o terraform.zip
+      - unzip -o terraform.zip
+      
+      - chmod +x terraform
+      - mv terraform /usr/local/bin/
+      
+      - terraform version
+      - SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id github-oauth-token --region $AWS_REGION --query SecretString --output text)
+      - GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r '.token')  # assumes the secret is stored as { "token": "ghp_xxx" }
+      - export GITHUB_TOKEN
+      - echo "GitHub token fetched (not printing for security reasons)"
+      
+  pre_build:
+    commands:
+      
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - cd terraform
+
+  build:
+    commands:
+      - docker build -t dockerized-web-app:$IMAGE_TAG -f app/Dockerfile app
+      - docker tag dockerized-web-app:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/dockerized-web-app:$IMAGE_TAG
+      - echo Pushing Docker image to ECR...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/dockerized-web-app:$IMAGE_TAG
+      - echo Running Terraform...
+      - |
+        if [ -d "./terraform" ]; then
+          cd terraform
+        else
+          echo "No terraform directory found!"
+          exit 1
+        fi
+      
+      - terraform init
+      - terraform plan -var="github_oauth_token=$GITHUB_TOKEN"
+      - terraform apply -var="github_oauth_token=$GITHUB_TOKEN"
+      
+=======
+  variables:
+    IMAGE_TAG: "latest"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t myapp:$IMAGE_TAG .
+      - docker tag myapp:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp:$IMAGE_TAG
+      - echo Pushing Docker image to ECR...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp:$IMAGE_TAG
+      - echo Running Terraform...
+      - cd terraform
+      - terraform init
+      - terraform plan -out=tfplan
+      - terraform apply -auto-approve tfplan
+
+>>>>>>> 71cedee (my commit)
+  post_build:
+    commands:
+      - echo Build completed successfully
+
+artifacts:
+  files:
+    - appspec.yml
+    - scripts/*

@@ -17,7 +17,7 @@ data "aws_iam_policy_document" "ec2_assume" {
 }
 
 resource "aws_iam_instance_profile" "ec2" {
-  name = "ec2-instance-profiles"
+  name = "ec2-instance-profiles-v2"
   role = aws_iam_role.ec2.name
 }
 
@@ -26,6 +26,30 @@ resource "aws_iam_role_policy_attachment" "ec2_ecr_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy" "codebuild_extra_permissions" {
+  name = "extra-read-access"
+  role = aws_iam_role.codebuild.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:Describe*",
+          "ecr:Describe*",
+          "iam:ListAttachedRolePolicies",
+          "s3:GetBucketAcl",
+          "s3:ListBucket",
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
 
 
 # CodeBuild IAM Role

@@ -182,3 +182,8 @@ resource "aws_iam_role" "codebuild_role1" {
     ]
   })
 }
+
+resource "aws_iam_role_policy_attachment" "codebuild_logs_policy1" {
+  role = aws_iam_role.codebuild_role1.name
+    policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}

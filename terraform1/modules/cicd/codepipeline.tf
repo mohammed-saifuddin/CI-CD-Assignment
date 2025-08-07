@@ -28,7 +28,7 @@ resource "aws_codepipeline" "app_pipeline" {
 
       configuration = {
         Owner      = "mohammed-saifuddin"
-        Repo       = "CI-CD-Assignment"
+        Repo       = "CI-CD-assignment"
         Branch     = "main"
         OAuthToken = var.github_oauth_token
       }

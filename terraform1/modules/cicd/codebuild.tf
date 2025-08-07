@@ -7,7 +7,7 @@ resource "aws_codebuild_project" "app_build" {
 
   source {
     type = "CODEPIPELINE"
-    location        = "https://github.com/mohammed-saifuddin/CI-CD-Assignment.git"
+    location        = "https://github.com/mohammed-saifuddin/CI-CD-assignment.git"
     buildspec = file("${path.root}/../buildspec.yml")
     
   }
